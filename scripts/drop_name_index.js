@@ -54,7 +54,7 @@ async function dropNameIndex() {
     try {
       await mongoose.disconnect();
     } catch (e) {
-      // ignore
+      
     }
   }
 }
