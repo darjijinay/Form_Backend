@@ -30,8 +30,7 @@ exports.registerUser = async (req, res, next) => {
     console.log('User created successfully:', user._id);
 
     res.status(201).json({
-      token: generateToken(user._id),
-      user: { _id: user._id, name: user.name, email: user.email },
+      message: 'Account created successfully. Please log in.'
     });
   } catch (err) {
     console.error('Registration error:', err);
@@ -41,12 +40,35 @@ exports.registerUser = async (req, res, next) => {
 
 exports.loginUser = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email }).select('+password');
+    const { email, password, code } = req.body;
+    const user = await User.findOne({ email }).select('+password +emailVerified +emailVerificationCode');
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+
+    // If not verified, handle code logic
+    if (!user.emailVerified) {
+      // If code is not provided, generate and send code
+      if (!code) {
+        // Generate a 6-digit code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        user.emailVerificationCode = verificationCode;
+        await user.save();
+        // Send code to user's email
+        const emailService = require('../services/emailService');
+        await emailService.sendVerificationCode(user.email, verificationCode);
+        return res.status(200).json({ message: 'Verification code sent to your email. Please enter the code to complete login.' });
+      }
+      // If code is provided, check it
+      if (user.emailVerificationCode !== code) {
+        return res.status(401).json({ message: 'Invalid verification code.' });
+      }
+      // Code is correct, verify user
+      user.emailVerified = true;
+      user.emailVerificationCode = null;
+      await user.save();
+    }
 
     res.json({
       token: generateToken(user._id),

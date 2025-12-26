@@ -1,3 +1,20 @@
+
+// Send verification code to user's email
+exports.sendVerificationCode = async (toEmail, code) => {
+  if (!toEmail || !code) return;
+  try {
+    await getTransporter().sendMail({
+      from: process.env.EMAIL_USER,
+      to: toEmail,
+      subject: 'Your Verification Code',
+      text: `Your verification code is: ${code}`,
+      html: `<p>Your verification code is: <b>${code}</b></p>`
+    });
+    console.log('✅ [EMAIL SERVICE] Verification code sent to:', toEmail);
+  } catch (err) {
+    console.error('❌ [EMAIL SERVICE] Error sending verification code:', err.message);
+  }
+};
 // server/src/services/emailService.js
 const nodemailer = require('nodemailer');
 

@@ -23,6 +23,15 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       select: false, // don't send by default
     },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationCode: {
+      type: String,
+      default: null,
+      select: false,
+    },
   },
   { timestamps: true }
 );
