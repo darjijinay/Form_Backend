@@ -1,3 +1,4 @@
+    // Remove invalid verificationCode fields (handled below as emailVerificationCode)
 // server/src/models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
@@ -27,8 +28,13 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    emailVerificationCode: {
+    verificationCode: {
       type: String,
+      default: null,
+      select: false,
+    },
+    verificationCodeExpires: {
+      type: Date,
       default: null,
       select: false,
     },

@@ -1,3 +1,30 @@
+// Send professional HTML verification code email
+exports.sendVerificationCodeHTML = async (toEmail, code) => {
+  if (!toEmail || !code) return;
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; box-shadow: 0 2px 8px #f0f0f0; padding: 32px 24px; background: #fff;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <img src='logo.png' alt='FormCraft' style='height: 48px; margin-bottom: 8px;' />
+        <h2 style="color: #4f46e5; margin: 0;">Verify your email</h2>
+      </div>
+      <p style="font-size: 16px; color: #333;">Thank you for registering with <b>FormCraft</b>! Please use the code below to verify your email address. This code will expire in <b>5 minutes</b>.</p>
+      <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #4f46e5; background: #f3f4f6; border-radius: 8px; padding: 16px; text-align: center; margin: 24px 0;">${code}</div>
+      <p style="font-size: 14px; color: #666;">If you did not request this, you can safely ignore this email.</p>
+      <div style="margin-top: 32px; text-align: center; font-size: 12px; color: #aaa;">&copy; ${new Date().getFullYear()} FormCraft</div>
+    </div>
+  `;
+  try {
+    await getTransporter().sendMail({
+      from: process.env.EMAIL_USER,
+      to: toEmail,
+      subject: 'Verify your email - FormCraft',
+      html: htmlContent,
+    });
+    console.log('✅ [EMAIL SERVICE] Professional verification code sent to:', toEmail);
+  } catch (err) {
+    console.error('❌ [EMAIL SERVICE] Error sending professional verification code:', err.message);
+  }
+};
 
 // Send verification code to user's email
 exports.sendVerificationCode = async (toEmail, code) => {
