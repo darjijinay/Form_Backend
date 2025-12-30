@@ -13,7 +13,7 @@ const templateSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['contact', 'survey', 'registration', 'feedback', 'other'],
+      enum: ['contact', 'survey', 'registration', 'feedback', 'product', 'education', 'travel', 'appointment', 'other'],
       default: 'other',
     },
     thumbnail: {
