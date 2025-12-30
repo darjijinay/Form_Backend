@@ -18,6 +18,8 @@ exports.createForm = async (req, res, next) => {
       customDetails: req.body.customDetails || [],
       fields: req.body.fields || [],
       settings: req.body.settings || {},
+      sourceTemplate: req.body.sourceTemplate || '',
+      step1Labels: req.body.step1Labels || {},
     });
 
     res.status(201).json(form);
@@ -64,6 +66,8 @@ exports.updateForm = async (req, res, next) => {
           customDetails: req.body.customDetails,
           fields: req.body.fields,
           settings: req.body.settings,
+          sourceTemplate: req.body.sourceTemplate,
+          step1Labels: req.body.step1Labels,
         },
       },
       { new: true }

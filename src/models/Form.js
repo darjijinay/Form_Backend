@@ -116,6 +116,14 @@ const formSchema = new mongoose.Schema(
       },
       allowMultipleSubmissions: { type: Boolean, default: true },
     },
+    sourceTemplate: {
+      type: String,
+    },
+    step1Labels: {
+      type: Map,
+      of: String,
+      default: {},
+    },
   },
   { timestamps: true }
 );
