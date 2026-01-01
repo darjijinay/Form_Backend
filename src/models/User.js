@@ -38,6 +38,16 @@ const userSchema = new mongoose.Schema(
       default: null,
       select: false,
     },
+    resetCode: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    resetCodeExpires: {
+      type: Date,
+      default: null,
+      select: false,
+    },
   },
   { timestamps: true }
 );

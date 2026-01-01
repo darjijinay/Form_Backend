@@ -158,3 +158,72 @@ exports.getMe = async (req, res, next) => {
     next(err);
   }
 };
+
+// Forgot password - send reset code
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Generate reset code and expiry
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetCodeExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    user.resetCode = resetCode;
+    user.resetCodeExpires = resetCodeExpires;
+    await user.save();
+
+    // Send reset code email
+    const emailService = require('../services/emailService');
+    await emailService.sendPasswordResetCode(user.email, resetCode);
+
+    res.json({ message: 'Password reset code sent to your email.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Verify reset code
+exports.verifyResetCode = async (req, res, next) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) return res.status(400).json({ message: 'Email and code are required' });
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+resetCode +resetCodeExpires');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user.resetCode || !user.resetCodeExpires) return res.status(400).json({ message: 'No reset code found. Please request a new one.' });
+    if (user.resetCode !== code) return res.status(400).json({ message: 'Invalid reset code' });
+    if (Date.now() > user.resetCodeExpires) return res.status(400).json({ message: 'Reset code expired. Please request a new one.' });
+
+    res.json({ message: 'Code verified successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Reset password with code
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) return res.status(400).json({ message: 'Email, code, and new password are required' });
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+password +resetCode +resetCodeExpires');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user.resetCode || !user.resetCodeExpires) return res.status(400).json({ message: 'No reset code found. Please request a new one.' });
+    if (user.resetCode !== code) return res.status(400).json({ message: 'Invalid reset code' });
+    if (Date.now() > user.resetCodeExpires) return res.status(400).json({ message: 'Reset code expired. Please request a new one.' });
+
+    // Update password
+    user.password = newPassword;
+    user.resetCode = null;
+    user.resetCodeExpires = null;
+    await user.save();
+
+    res.json({ message: 'Password reset successfully. You can now login with your new password.' });
+  } catch (err) {
+    next(err);
+  }
+};
