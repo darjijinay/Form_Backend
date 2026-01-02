@@ -97,6 +97,7 @@ const formSchema = new mongoose.Schema(
     organizerEmail: String,
     organizerPhone: String,
     logo: String, // logo image URL or data URL
+    headerImage: String,
     customDetails: {
       type: [customDetailSchema],
       default: [],
