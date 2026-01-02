@@ -6,11 +6,17 @@ exports.getTemplates = async (req, res) => {
   try {
     const { category } = req.query;
     const query = {
-      $or: [
+      isPremade: true,
+    };
+
+    // If user is authenticated, also include their custom templates
+    if (req.user?.id) {
+      query.$or = [
         { isPremade: true },
         { createdBy: req.user.id },
-      ],
-    };
+      ];
+      delete query.isPremade;
+    }
 
     if (category) {
       query.category = category;
@@ -46,8 +52,8 @@ exports.getTemplateById = async (req, res) => {
       });
     }
 
-    // Check if user has access (premade or own template)
-    if (!template.isPremade && template.createdBy.toString() !== req.user.id) {
+    // Allow public access to premade templates, restrict custom templates
+    if (!template.isPremade && (!req.user || template.createdBy.toString() !== req.user.id)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied',

@@ -10,10 +10,10 @@ const {
 } = require('../controllers/template.controller');
 
 // Get all templates
-router.get('/', protect, getTemplates);
+router.get('/', getTemplates);
 
 // Get single template
-router.get('/:id', protect, getTemplateById);
+router.get('/:id', getTemplateById);
 
 // Create custom template from form
 router.post('/', protect, createTemplate);
