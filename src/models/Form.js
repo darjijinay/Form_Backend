@@ -65,7 +65,7 @@ const fieldSchema = new mongoose.Schema(
 const customDetailSchema = new mongoose.Schema(
   {
     label: { type: String, required: false, trim: true },
-    fieldType: { type: String, default: 'short_text' },
+    type: { type: String, default: 'short_text' },
     value: { type: String, default: '' },
   },
   { _id: false, id: false }

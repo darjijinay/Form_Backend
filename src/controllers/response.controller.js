@@ -3,9 +3,6 @@ const Response = require('../models/Response');
 const Form = require('../models/Form');
 const { Parser } = require('json2csv');
 const { sendResponseNotification } = require('../services/emailService');
-// Webhook delivery service removed
-const googleSheetsSyncService = require('../services/googleSheetsSync.service');
-// Slack notification service removed
 
 // Public: submit a response
 exports.submitResponse = async (req, res, next) => {
@@ -50,17 +47,6 @@ exports.submitResponse = async (req, res, next) => {
       console.log('❌ Email notification skipped - notifyOnSubmission or notificationEmail missing');
     }
 
-    // Webhook integration removed
-
-    // Trigger Google Sheets sync if enabled
-    googleSheetsSyncService
-      .syncFormResponse(form._id, response._id)
-      .catch((err) => {
-        console.error('Failed to sync to Google Sheets:', err.message);
-      });
-
-    // Slack integration removed
-
     res.status(201).json({ message: 'Response submitted', responseId: response._id });
   } catch (err) {
     next(err);
@@ -81,11 +67,49 @@ exports.getResponsesForForm = async (req, res, next) => {
       return res.status(404).json({ message: 'Form not found' });
     }
 
-    const responses = await Response.find({ form: formId })
-      .sort('-createdAt')
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      search = '',
+    } = req.query;
+
+    const query = { form: formId };
+    if (search) {
+      query.answers = {
+        $elemMatch: {
+          value: { $regex: search, $options: 'i' }
+        }
+      };
+    }
+
+    const sortOptions = {};
+    if (sortBy === 'submittedAt' || sortBy === 'createdAt') {
+      sortOptions.createdAt = sortOrder === 'asc' ? 1 : -1;
+    } else {
+      // Note: Sorting by arbitrary answer values is complex and not implemented yet.
+      // Defaulting to createdAt for now.
+      sortOptions.createdAt = sortOrder === 'asc' ? 1 : -1;
+    }
+
+    const totalResponses = await Response.countDocuments(query);
+    const responses = await Response.find(query)
+      .sort(sortOptions)
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
       .lean();
 
-    res.json({ form, responses });
+    res.json({
+      form,
+      responses,
+      pagination: {
+        total: totalResponses,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(totalResponses / limit),
+      },
+    });
   } catch (err) {
     next(err);
   }

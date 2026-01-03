@@ -15,9 +15,7 @@ const templateRoutes = require('./routes/template.routes'); // optional
 const uploadRoutes = require('./routes/upload.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
 const sharingRoutes = require('./routes/sharing.routes');
-const commentsRoutes = require('./routes/comments.routes');
 const versionRoutes = require('./routes/version.routes');
-const googleSheetsRoutes = require('./routes/googleSheets.routes');
 const errorHandler = require('./middleware/errorHandler');
 
 dotenv.config();
@@ -67,9 +65,7 @@ app.use('/api/templates', templateRoutes); // make sure this line is AFTER app i
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api', sharingRoutes);
-app.use('/api', commentsRoutes);
 app.use('/api', versionRoutes);
-app.use('/api', googleSheetsRoutes);
 
 // serve uploaded files statically with CORS headers
 const uploadsStatic = path.join(__dirname, '..', 'uploads');

@@ -29,7 +29,6 @@ const formShareSchema = new mongoose.Schema(
       canEdit: { type: Boolean, default: false }, // edit form fields/settings
       canViewResponses: { type: Boolean, default: false }, // view responses
       canDeleteResponses: { type: Boolean, default: false }, // delete responses
-      canAddComments: { type: Boolean, default: false }, // comment on responses
       canShare: { type: Boolean, default: false }, // share with others
       canDelete: { type: Boolean, default: false }, // delete form
     },
@@ -54,7 +53,6 @@ formShareSchema.pre('save', function(next) {
         canEdit: true,
         canViewResponses: true,
         canDeleteResponses: true,
-        canAddComments: true,
         canShare: true,
         canDelete: true,
       };
@@ -64,7 +62,6 @@ formShareSchema.pre('save', function(next) {
         canEdit: true,
         canViewResponses: true,
         canDeleteResponses: false,
-        canAddComments: true,
         canShare: false,
         canDelete: false,
       };
@@ -74,7 +71,6 @@ formShareSchema.pre('save', function(next) {
         canEdit: false,
         canViewResponses: true,
         canDeleteResponses: true,
-        canAddComments: true,
         canShare: false,
         canDelete: false,
       };
