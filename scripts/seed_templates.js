@@ -437,20 +437,30 @@ const premadeTemplates = [
     },
   },
   {
-    name: 'Trip Package Template',
+    name: 'Trip Package',
     description: 'Capture trip package details and traveler info',
     category: 'travel',
     isPremade: true,
     thumbnail: '🧳',
-    fields: [
+    metadata: [
       {
-        type: 'short_text',
         label: 'Destination',
-        placeholder: 'Enter destination',
-        required: true,
-        order: 0,
-        width: 'full',
+        value: '',
       },
+      {
+        label: 'Duration',
+        value: '',
+      },
+      {
+        label: 'Price',
+        value: '',
+      },
+      {
+        label: 'Itinerary',
+        value: '',
+      },
+    ],
+    fields: [
       {
         type: 'dropdown',
         label: 'Package Type',
@@ -552,6 +562,61 @@ const premadeTemplates = [
       requireLogin: false,
       notifyOnSubmit: true,
       customMessage: 'Appointment booked successfully!',
+    },
+  },
+  {
+    name: 'Event RSVP',
+    description: 'RSVP for an event',
+    category: 'event',
+    isPremade: true,
+    thumbnail: '🗓️',
+    fields: [
+      {
+        type: 'short_text',
+        label: 'Full Name',
+        placeholder: 'Enter your full name',
+        required: true,
+        order: 0,
+        width: 'full',
+      },
+      {
+        type: 'email',
+        label: 'Email Address',
+        placeholder: 'your@email.com',
+        required: true,
+        order: 1,
+        width: 'full',
+      },
+      {
+        type: 'dropdown',
+        label: 'Event Status',
+        options: ['Going', 'Not Going', 'Maybe'],
+        required: true,
+        order: 2,
+        width: 'full',
+      },
+      {
+        type: 'number',
+        label: 'Capacity',
+        placeholder: '0',
+        required: true,
+        order: 3,
+        width: 'full',
+      },
+      {
+        type: 'long_text',
+        label: 'Agenda',
+        placeholder: 'What is the event agenda?',
+        required: false,
+        order: 4,
+        width: 'full',
+      },
+    ],
+    settings: {
+      allowMultipleSubmissions: false,
+      requireLogin: false,
+      notifyOnSubmit: true,
+      customMessage: 'Thank you for your RSVP!',
     },
   },
 ];
