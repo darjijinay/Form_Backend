@@ -2,13 +2,17 @@
 const Response = require('../models/Response');
 const Form = require('../models/Form');
 const { Parser } = require('json2csv');
-const { sendResponseNotification } = require('../services/emailService');
+const { sendResponseNotification, sendResponderCopy } = require('../services/emailService');
 
 // Public: submit a response
 exports.submitResponse = async (req, res, next) => {
   try {
     const { formId } = req.params;
-    const { answers } = req.body;
+    const { answers, sendCopy } = req.body;
+
+    if (!Array.isArray(answers)) {
+      return res.status(400).json({ message: 'Invalid submission payload.' });
+    }
 
     const form = await Form.findById(formId).lean();
     if (!form || !form.settings?.isPublic) {
@@ -17,8 +21,44 @@ exports.submitResponse = async (req, res, next) => {
 
     // Basic validation: ensure fieldIds exist in form
     const formFieldIds = new Set(form.fields.map((f) => f._id));
-    const sanitizedAnswers =
-      answers?.filter((a) => formFieldIds.has(a.fieldId)) || [];
+    const sanitizedAnswers = answers.filter((a) => formFieldIds.has(a.fieldId));
+
+    // Determine responder email according to collection settings
+    let responderEmail = null;
+    const mode = form.settings?.collectEmails || 'none';
+    
+    console.log('=== RESPONDER EMAIL CHECK ===');
+    console.log('collectEmails mode:', mode);
+    
+    // Check if form has any email field
+    const emailField = form.fields.find((f) => f.type === 'email');
+    console.log('Email field found:', !!emailField);
+    
+    if (mode === 'responder_input' || emailField) {
+      const emailAnswer = emailField
+        ? sanitizedAnswers.find((a) => a.fieldId === emailField._id)
+        : null;
+      console.log('Email answer value:', emailAnswer?.value);
+      
+      if (emailAnswer && emailAnswer.value) {
+        responderEmail = String(emailAnswer.value).trim();
+        console.log('✅ Responder email set to:', responderEmail);
+      } else if (mode === 'responder_input') {
+        // Only require email if collectEmails is explicitly set to responder_input
+        return res.status(400).json({ message: 'Please provide your email address.' });
+      }
+    }
+
+    // Determine copy preference respecting owner setting
+    const sendCopySetting = typeof form.settings?.sendResponseCopy === 'string'
+      ? form.settings.sendResponseCopy
+      : (form.settings?.sendResponseCopy ? 'requested' : 'off');
+    const responderWantsCopy = sendCopySetting === 'always' || (sendCopySetting === 'requested' && sendCopy);
+    
+    console.log('sendCopySetting:', sendCopySetting);
+    console.log('sendCopy from request:', sendCopy);
+    console.log('responderWantsCopy:', responderWantsCopy);
+    console.log('responderEmail:', responderEmail);
 
     const response = await Response.create({
       form: form._id,
@@ -29,6 +69,8 @@ exports.submitResponse = async (req, res, next) => {
           req.headers['x-forwarded-for'] ||
           req.connection.remoteAddress ||
           '',
+        email: responderEmail,
+        sendCopy: responderWantsCopy,
       },
     });
 
@@ -45,6 +87,20 @@ exports.submitResponse = async (req, res, next) => {
       });
     } else {
       console.log('❌ Email notification skipped - notifyOnSubmission or notificationEmail missing');
+    }
+
+    // Send responder copy only when they opted in and provided an email
+    console.log('=== RESPONDER COPY CHECK ===');
+    console.log('responderWantsCopy:', responderWantsCopy);
+    console.log('responderEmail:', responderEmail);
+    
+    if (responderWantsCopy && responderEmail) {
+      console.log('✅ Triggering responder copy to:', responderEmail);
+      sendResponderCopy(responderEmail, form, sanitizedAnswers).catch((err) => {
+        console.error('❌ Failed to send responder copy:', err.message);
+      });
+    } else {
+      console.log('❌ Responder copy skipped - responderWantsCopy:', responderWantsCopy, 'responderEmail:', responderEmail);
     }
 
     res.status(201).json({ message: 'Response submitted', responseId: response._id });
@@ -139,6 +195,8 @@ exports.exportResponsesCsv = async (req, res, next) => {
 
     const rows = responses.map((r) => {
       const row = { submittedAt: r.createdAt };
+      if (r.meta?.email) row['Responder Email'] = r.meta.email;
+      if (r.meta?.sendCopy) row['Send Copy Opt-in'] = r.meta.sendCopy;
       r.answers.forEach((ans) => {
         const key = fieldMap[ans.fieldId] || ans.fieldId;
         row[key] = ans.value;

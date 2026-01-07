@@ -121,6 +121,16 @@ const formSchema = new mongoose.Schema(
       isPublic: { type: Boolean, default: true },
       notificationEmail: String,
       notifyOnSubmission: { type: Boolean, default: false },
+      collectEmails: {
+        type: String,
+        enum: ['none', 'responder_input'],
+        default: 'none',
+      },
+      sendResponseCopy: {
+        type: String,
+        enum: ['off', 'requested', 'always'],
+        default: 'off',
+      },
       theme: {
         primaryColor: { type: String, default: '#6366f1' },
         accentColor: { type: String, default: '#22c55e' },

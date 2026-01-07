@@ -28,6 +28,8 @@ const responseSchema = new mongoose.Schema(
     meta: {
       userAgent: String,
       ip: String,
+      email: String,
+      sendCopy: { type: Boolean, default: false },
     },
   },
   { timestamps: true }

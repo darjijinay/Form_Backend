@@ -169,3 +169,60 @@ exports.sendResponseNotification = async (notificationEmail, form, answers) => {
     // Don't throw - don't block form submission if email fails
   }
 };
+
+/**
+ * Send a copy of the response to the responder when they opt in.
+ */
+exports.sendResponderCopy = async (toEmail, form, answers) => {
+  if (!toEmail || !process.env.EMAIL_USER) {
+    console.log('❌ [EMAIL SERVICE] Skipped responder copy: missing recipient or credentials');
+    return;
+  }
+
+  try {
+    const fieldMap = {};
+    form.fields.forEach((f) => {
+      fieldMap[f._id] = f.label;
+    });
+
+    const responseBody = answers
+      .map((ans) => {
+        const label = fieldMap[ans.fieldId] || ans.fieldId;
+        const value = Array.isArray(ans.value) ? ans.value.join(', ') : ans.value;
+        return `<tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>${label}</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${value ?? ''}</td></tr>`;
+      })
+      .join('');
+
+    const htmlContent = `
+      <html>
+        <body style="font-family: Arial, sans-serif; color: #333;">
+          <h2>Your response to "${form.title}"</h2>
+          <p>Here is a copy of what you submitted.</p>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <thead>
+              <tr style="background-color: #f0f0f0;">
+                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Field</th>
+                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Response</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${responseBody}
+            </tbody>
+          </table>
+          <p style="margin-top: 20px; color: #666; font-size: 12px;">This email was sent because you opted to receive a copy of your response.</p>
+        </body>
+      </html>
+    `;
+
+    await getTransporter().sendMail({
+      from: process.env.EMAIL_USER,
+      to: toEmail,
+      subject: `Copy of your response: ${form.title}`,
+      html: htmlContent,
+    });
+
+    console.log('✅ [EMAIL SERVICE] Responder copy sent to:', toEmail);
+  } catch (err) {
+    console.error('❌ [EMAIL SERVICE] Error sending responder copy:', err.message);
+  }
+};
