@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const formVersionSchema = new mongoose.Schema(
   {
     form: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: 'Form',
       required: true,
       index: true,

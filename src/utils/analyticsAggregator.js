@@ -14,25 +14,13 @@ const aggregateResponses = (form, responses) => {
       uniqueValues: new Set(),
       values: [], // all values for this field
       counts: {}, // value -> count (for single/multiple choice)
-      // Track when the field was added
-      addedAt: field.createdAt ? new Date(field.createdAt) : (form.updatedAt ? new Date(form.updatedAt) : null),
-      // Fallback: if no createdAt, use form updatedAt
     };
-  });
-
-  // For each field, determine the earliest response to consider (after field was added)
-  const fieldEarliestDate = {};
-  Object.values(fieldAnalytics).forEach((fa) => {
-    // Use field.createdAt if available, else form.updatedAt, else null
-    fieldEarliestDate[fa.fieldId] = fa.addedAt || null;
   });
 
   // Process each response
   responses.forEach((response) => {
     Object.keys(fieldAnalytics).forEach((fieldId) => {
       const analytics = fieldAnalytics[fieldId];
-      // Only consider responses after the field was added
-      if (fieldEarliestDate[fieldId] && new Date(response.createdAt) < fieldEarliestDate[fieldId]) return;
       const answer = response.answers.find(a => a.fieldId === fieldId);
       if (!answer) return;
       analytics.totalResponses++;
@@ -55,21 +43,12 @@ const aggregateResponses = (form, responses) => {
     });
   });
 
-  // For each field, count the number of responses that could have answered it (submitted after field was added)
-  const fieldPossibleResponses = {};
-  Object.keys(fieldAnalytics).forEach((fieldId) => {
-    const addedAt = fieldEarliestDate[fieldId];
-    fieldPossibleResponses[fieldId] = addedAt
-      ? responses.filter(r => new Date(r.createdAt) >= addedAt).length
-      : responses.length;
-  });
-
   // Convert to response-friendly format
   const result = {};
   Object.keys(fieldAnalytics).forEach((fieldId) => {
     const analytics = fieldAnalytics[fieldId];
     const field = fieldMap[fieldId];
-    const possible = fieldPossibleResponses[fieldId] || 0;
+    const possible = responses.length;
     result[fieldId] = {
       fieldId: analytics.fieldId,
       label: analytics.label,

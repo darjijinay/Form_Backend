@@ -1,5 +1,6 @@
 // server/src/controllers/analytics.controller.js
 const Form = require('../models/Form');
+const FormVersion = require('../models/FormVersion');
 const Response = require('../models/Response');
 const View = require('../models/View');
 const mongoose = require('mongoose');
@@ -189,13 +190,27 @@ exports.getFormAnalytics = async (req, res, next) => {
         query.submittedAt.$lte = end;
       }
     }
+    const versions = await FormVersion.find({ form: form._id }).lean();
+    const allFields = [...form.fields];
+    const allFieldIds = new Set(allFields.map(f => f._id));
+
+    versions.forEach(v => {
+        v.fields.forEach(field => {
+            if (!allFieldIds.has(field._id)) {
+                allFields.push(field);
+                allFieldIds.add(field._id);
+            }
+        });
+    });
+
+    const formWithAllFields = { ...form.toObject(), fields: allFields };
 
     // Fetch responses and views
     const responses = await Response.find(query).sort({ submittedAt: -1 });
     const views = await View.find({ form: formId });
 
     // Aggregate data
-    const fieldAnalytics = aggregateResponses(form, responses);
+    const fieldAnalytics = aggregateResponses(formWithAllFields, responses);
     const timeline = getSubmissionTimeline(responses, groupBy);
     // Only required fields must be filled for completion
     const stats = getFormStats(form, responses, views);

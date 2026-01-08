@@ -107,6 +107,11 @@ const formSchema = new mongoose.Schema(
     eventStatus: String,
     capacity: Number,
     agenda: String,
+    appointmentTitle: String,
+    appointmentType: String,
+    appointmentDateTime: String,
+    appointmentLocation: String,
+    appointmentDescription: String,
     logo: String, // logo image URL or data URL
     headerImage: String,
     customDetails: {
