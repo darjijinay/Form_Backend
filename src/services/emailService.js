@@ -7,7 +7,7 @@ exports.sendVerificationCodeHTML = async (toEmail, code) => {
         <img src='logo.png' alt='FormCraft' style='height: 48px; margin-bottom: 8px;' />
         <h2 style="color: #4f46e5; margin: 0;">Verify your email</h2>
       </div>
-      <p style="font-size: 16px; color: #333;">Thank you for registering with <b>FormCraft</b>! Please use the code below to verify your email address. This code will expire in <b>5 minutes</b>.</p>
+      <p style="font-size: 16px; color: #333;">Thank you for registering with <b>FormCraft</b>! Please use the code below to verify your email address. This code will expire in <b>1 minute</b>.</p>
       <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #4f46e5; background: #f3f4f6; border-radius: 8px; padding: 16px; text-align: center; margin: 24px 0;">${code}</div>
       <p style="font-size: 14px; color: #666;">If you did not request this, you can safely ignore this email.</p>
       <div style="margin-top: 32px; text-align: center; font-size: 12px; color: #aaa;">&copy; ${new Date().getFullYear()} FormCraft</div>
@@ -52,7 +52,7 @@ exports.sendPasswordResetCode = async (toEmail, code) => {
         <img src='logo.png' alt='FormCraft' style='height: 48px; margin-bottom: 8px;' />
         <h2 style="color: #4f46e5; margin: 0;">Reset your password</h2>
       </div>
-      <p style="font-size: 16px; color: #333;">You requested to reset your password for <b>FormCraft</b>. Please use the code below to reset your password. This code will expire in <b>10 minutes</b>.</p>
+      <p style="font-size: 16px; color: #333;">You requested to reset your password for <b>FormCraft</b>. Please use the code below to reset your password. This code will expire in <b>1 minute</b>.</p>
       <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #4f46e5; background: #f3f4f6; border-radius: 8px; padding: 16px; text-align: center; margin: 24px 0;">${code}</div>
       <p style="font-size: 14px; color: #666;">If you did not request this, you can safely ignore this email.</p>
       <div style="margin-top: 32px; text-align: center; font-size: 12px; color: #aaa;">&copy; ${new Date().getFullYear()} FormCraft</div>
@@ -167,6 +167,87 @@ exports.sendResponseNotification = async (notificationEmail, form, answers) => {
   } catch (err) {
     console.error('❌ [EMAIL SERVICE] Error sending email:', err.message);
     // Don't throw - don't block form submission if email fails
+  }
+};
+
+/**
+ * Send welcome email to new users after successful account verification
+ * @param {string} toEmail - User's email address
+ * @param {string} userName - User's name
+ */
+exports.sendWelcomeEmail = async (toEmail, userName) => {
+  if (!toEmail || !userName || !process.env.EMAIL_USER) {
+    console.log('❌ [EMAIL SERVICE] Skipped welcome email: missing recipient, name, or credentials');
+    return;
+  }
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; box-shadow: 0 2px 8px #f0f0f0; padding: 32px 24px; background: #fff;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <img src='logo.png' alt='FormCraft' style='height: 48px; margin-bottom: 8px;' />
+        <h2 style="color: #4f46e5; margin: 0;">Welcome to FormCraft! 🎉</h2>
+      </div>
+      
+      <p style="font-size: 16px; color: #333;">Hi <strong>${userName}</strong>,</p>
+      
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">
+        Welcome to <strong>FormCraft</strong>! 🎉<br/>
+        We're excited to have you on board.
+      </p>
+      
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">
+        FormCraft makes it easy to create, customize, and share forms for any purpose—whether it's surveys, registrations, feedback, appointments, or more. You can design forms with predefined templates or build one from scratch in just a few clicks.
+      </p>
+      
+      <div style="background: #f3f4f6; border-radius: 8px; padding: 20px; margin: 24px 0;">
+        <p style="font-size: 16px; color: #333; margin: 0 0 12px 0;"><strong>Here's what you can do right away:</strong></p>
+        <ul style="margin: 0; padding-left: 24px; color: #333; line-height: 1.8;">
+          <li>📝 Create custom forms using ready-made templates</li>
+          <li>🎨 Customize form fields, design, and settings</li>
+          <li>📊 Collect and manage responses in one place</li>
+          <li>🔗 Share your forms instantly with a public link</li>
+        </ul>
+      </div>
+      
+      <div style="text-align: center; margin: 28px 0;">
+        <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/app/dashboard" style="display: inline-block; background-color: #4f46e5; color: #fff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Get Started Now</a>
+      </div>
+      
+      <p style="font-size: 15px; color: #333; line-height: 1.6;">
+        👉 <strong>Get started now:</strong> Log in to your dashboard and create your first form today.
+      </p>
+      
+      <p style="font-size: 15px; color: #666; line-height: 1.6;">
+        If you ever need help, our support team is always here for you.
+      </p>
+      
+      <p style="font-size: 15px; color: #333; margin-top: 24px;">
+        Thank you for choosing FormCraft.<br/>
+        Happy form building!
+      </p>
+      
+      <p style="font-size: 15px; color: #333; margin-top: 20px;">
+        Best regards,<br/>
+        <strong>The FormCraft Team</strong>
+      </p>
+      
+      <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #aaa;">
+        &copy; ${new Date().getFullYear()} FormCraft. All rights reserved.
+      </div>
+    </div>
+  `;
+
+  try {
+    await getTransporter().sendMail({
+      from: process.env.EMAIL_USER,
+      to: toEmail,
+      subject: 'Welcome to FormCraft - Let\'s Build Your First Form!',
+      html: htmlContent,
+    });
+    console.log('✅ [EMAIL SERVICE] Welcome email sent successfully to:', toEmail);
+  } catch (err) {
+    console.error('❌ [EMAIL SERVICE] Error sending welcome email:', err.message);
+    // Don't throw - don't block verification if email fails
   }
 };
 

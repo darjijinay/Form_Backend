@@ -36,7 +36,7 @@ exports.registerUser = async (req, res, next) => {
 
     // Generate verification code and expiry
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const verificationCodeExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
+    const verificationCodeExpires = Date.now() + 1 * 60 * 1000; // 1 minute
 
     const user = await User.create({
       name,
@@ -71,10 +71,21 @@ exports.verifyUserCode = async (req, res, next) => {
     if (!user.verificationCode || !user.verificationCodeExpires) return res.status(400).json({ message: 'No code set. Please resend code.' });
     if (user.verificationCode !== code) return res.status(400).json({ message: 'Invalid verification code' });
     if (Date.now() > user.verificationCodeExpires) return res.status(400).json({ message: 'Verification code expired' });
+    
+    // Mark as verified (first-time verification)
+    const isFirstTimeVerification = !user.emailVerified;
     user.emailVerified = true;
     user.verificationCode = null;
     user.verificationCodeExpires = null;
     await user.save();
+    
+    // Send welcome email ONLY on first-time account verification
+    if (isFirstTimeVerification) {
+      const emailService = require('../services/emailService');
+      await emailService.sendWelcomeEmail(user.email, user.name);
+      console.log('✅ [AUTH] Welcome email triggered for new user:', user.email);
+    }
+    
     // Log in user after verification
     const generateToken = require('../utils/generateToken');
     res.json({
@@ -95,7 +106,7 @@ exports.resendVerificationCode = async (req, res, next) => {
     if (user.emailVerified) return res.status(400).json({ message: 'User already verified' });
     // Generate new code and expiry
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const verificationCodeExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
+    const verificationCodeExpires = Date.now() + 1 * 60 * 1000; // 1 minute
     user.verificationCode = verificationCode;
     user.verificationCodeExpires = verificationCodeExpires;
     await user.save();
@@ -168,9 +179,14 @@ exports.forgotPassword = async (req, res, next) => {
     const user = await User.findOne({ email: email.trim().toLowerCase() });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Generate reset code and expiry
+    // If a reset code already exists and hasn't expired, don't send another email
+    if (user.resetCode && user.resetCodeExpires && Date.now() < user.resetCodeExpires) {
+      return res.json({ message: 'Password reset code already sent. Please check your email.' });
+    }
+
+    // Generate reset code and expiry (1 minute)
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const resetCodeExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    const resetCodeExpires = Date.now() + 1 * 60 * 1000; // 1 minute
 
     user.resetCode = resetCode;
     user.resetCodeExpires = resetCodeExpires;
